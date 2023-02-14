@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   View,
   Text,
@@ -15,13 +15,32 @@ import {
 } from "react-native-heroicons/outline";
 import Categories from "../components/Categories";
 import FeaturedRow from "../components/FeaturedRow";
+import Colors from "../constants/Colors";
+import client from "../sanity";
 
 const HomeScreen = ({ navigation }) => {
+  [featuredCategories, setFeaturedCategories] = useState([]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
   }, [navigation]);
+
+  useEffect(() => {
+    client
+      .fetch(
+        `*[_type == "featured"] {
+      ...,
+      restaurants[]->{
+        ...,
+        dishes[]->,
+    
+      }
+    }`
+      )
+      .then((data) => setFeaturedCategories(data));
+  }, []);
   return (
     <SafeAreaView className="bg-white pt-5">
       <View className="flex-row pb-3 items-center mx-4 space-x-2">
@@ -35,10 +54,10 @@ const HomeScreen = ({ navigation }) => {
           </Text>
           <Text className="font-bold text-xl">
             Поточна локація
-            <ChevronDownIcon size={28} color="#00ccbb" />
+            <ChevronDownIcon size={28} color={Colors.ascent500} />
           </Text>
         </View>
-        <UserIcon size={35} color="#00ccbb" />
+        <UserIcon size={35} color={Colors.ascent500} />
       </View>
 
       {/* Search */}
@@ -47,7 +66,7 @@ const HomeScreen = ({ navigation }) => {
           <MagnifyingGlassIcon size={20} color="gray" />
           <TextInput placeholder="Ресторани та кафе" />
         </View>
-        <AdjustmentsHorizontalIcon color="#00ccbb" />
+        <AdjustmentsHorizontalIcon color={Colors.ascent500} />
       </View>
 
       {/* Body  44:39*/}
@@ -57,25 +76,14 @@ const HomeScreen = ({ navigation }) => {
         <Categories />
 
         {/* Featured */}
-        <FeaturedRow
-          title="Обране"
-          description="Пропозиції від партнерів"
-          id="a1"
-        />
-
-        {/* Tasty discounts */}
-        <FeaturedRow
-          title="Смачнючі Знижки"
-          description="Найкращі пропозиції тижня"
-          id="b2"
-        />
-
-        {/* Offers near you */}
-        <FeaturedRow
-          title="Пропозиції поряд з Вами"
-          description="Спробуйте місцеву кухню"
-          id="c3"
-        />
+        {featuredCategories?.map((category) => (
+          <FeaturedRow
+            title={category.name}
+            description={category.short_description}
+            id={category._id}
+            key={category._id}
+          />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
